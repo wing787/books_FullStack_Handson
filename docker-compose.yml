@@ -8,4 +8,5 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: password
       TZ: Asia/Tokyo
-    ports: 53306:3306
+    ports:
+      - 53306:3306
