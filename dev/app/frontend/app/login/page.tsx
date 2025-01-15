@@ -13,8 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import axis from "axios";
-import axios from "axios";
+import axios from "../../plugin/axios";
 
 type FormData = {
     username: string;
