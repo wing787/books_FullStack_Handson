@@ -1,5 +1,6 @@
 'use client'
 
+import axios from "axios";
 import {
     Alert,
     AlertColor,
@@ -18,8 +19,6 @@ import {
 } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { useState, useEffect, use } from 'react';
-import productsData from "../sample/dummy_products.json";
-import inventoriesData from "../sample/dummy_inventories.json";
 
 type ProductData = {
     id: number;
@@ -35,7 +34,7 @@ type FormData = {
 
 type InventoryData = {
     id: number;
-    type: string;
+    type: number;
     date: string;
     unit: number;
     quantity: number;
@@ -44,7 +43,7 @@ type InventoryData = {
 };
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
-    const resolvedParams = use(params); // paramsのPromiseを解決
+    const resolvedParams = use(params); // Promiseを解決
 
     const {
         register,
@@ -54,7 +53,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
     // 状態管理
     const [product, setProduct] = useState<ProductData>({ id: 0, name: "", price: 0, description: "" });
-    const [data, setData] = useState<Array<InventoryData>>(inventoriesData);
+    const [data, setData] = useState<Array<InventoryData>>([]);
     const [action, setAction] = useState<string>("");
     const [open, setOpen] = useState(false);
     const [severity, setSeverity] = useState<AlertColor>('success');
@@ -66,17 +65,40 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         setMessage(message);
     };
 
-    const handleClose = () => {
+    const handleClose = (event: any, reason: any) => {
         setOpen(false);
     };
 
     useEffect(() => {
-        const selectedProduct: ProductData = productsData.find(
-            (v) => v.id === parseInt(resolvedParams.id)
-        ) ?? { id: 0, name: "", price: 0, description: "" };
+        // 商品情報の取得
+        axios.get(`/api/inventory/products/${resolvedParams.id}`)
+            .then((response) => {
+                setProduct(response.data);
+            });
 
-        setProduct(selectedProduct);
-    }, [resolvedParams]);
+        // 在庫履歴の取得
+        axios.get(`/api/inventory/inventories/${resolvedParams.id}`)
+            .then((response) => {
+                const inventoryData: InventoryData[] = [];
+                let key: number = 1;
+                let inventory: number = 0;
+
+                response.data.forEach((e: InventoryData) => {
+                    inventory += e.type === 1 ? e.quantity : e.quantity * -1;
+                    const newElement = {
+                        id: key++,
+                        type: e.type,
+                        date: e.date,
+                        unit: e.unit,
+                        quantity: e.quantity,
+                        price: e.unit * e.quantity,
+                        inventory: inventory,
+                    };
+                    inventoryData.unshift(newElement);
+                });
+                setData(inventoryData);
+            });
+    }, [open, resolvedParams]);
 
     const onSubmit = (event: any): void => {
         const formData: FormData = {
@@ -92,12 +114,27 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         }
     };
 
+    // 仕入れ・卸し処理
     const handlePurchase = (data: FormData) => {
-        result('success', '商品を仕入れました');
+        const purchase = {
+            quantity: data.quantity,
+            purchase_date: new Date(),
+            product: data.id,
+        };
+        axios.post('/api/inventory/pruchases', purchase).then((response) => {
+            result('success', '商品を仕入れました');  
+        });
     };
 
     const handleSell = (data: FormData) => {
-        result('success', '商品を卸しました');
+        const sale = {
+            quantity: data.quantity,
+            sales_date: new Date(),
+            product: data.id,
+        };
+        axios.post('/api/inventory/sales', sale).then((response) => {
+            result('success', '商品を卸しました');
+        });
     };
 
     return (
