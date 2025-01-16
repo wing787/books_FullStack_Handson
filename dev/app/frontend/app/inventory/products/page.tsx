@@ -1,6 +1,6 @@
 'use client'
 
-import axios from "../../../plugin/axios";
+import axios from "../../../plugins/axios";
 import {
     Alert,
     AlertColor,

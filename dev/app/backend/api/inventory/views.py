@@ -1,12 +1,13 @@
 from api.inventory.exception import BusinessException
 from django.conf import settings
 from django.db.models import F, Value, Sum
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncMonth
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from .models import Product, Purchase, Sales
-from .serializers import InventorySerializer, ProductSerializer, PurchaseSerializer, SaleSerializer
+from .serializers import InventorySerializer, ProductSerializer, PurchaseSerializer, SalesSerializer
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -91,7 +92,7 @@ class SalesView(APIView):
         """
         売上情報を登録する
         """
-        serializer = SaleSerializer(data=request.data)
+        serializer = SalesSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # 在庫が売る分の数量を超えないかチェック
         purchase = Purchase.objects.filter(product_id=request.data['product']).aggregate(quantity_sum=Coalesce(Sum('quantity'), 0)) # 在庫テーブルのレコードを取得
@@ -193,5 +194,6 @@ class SalesSyncView(APIView):
 
         return Response(status=201)
 
-class SalesList(APIView):
-    pass
+class SalesList(ListAPIView):
+    queryset = Sales.objects.annotate(monthly_date=TruncMonth('sales_date')).values('monthly_date').annotate(monthly_price=Sum('quantity')).order_by('monthly_date')
+    serializer_class = SalesSerializer
