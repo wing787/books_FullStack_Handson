@@ -16,5 +16,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name="token_refresh"),
     path('login/', views.LoginView.as_view()), #name='login'),
     path('retry/', views.RetryView.as_view()), #name='retry'),
-    path('logout/', views.LogoutView.as_view()), #name='logout'),   
+    path('logout/', views.LogoutView.as_view()), #name='logout'),
+    path('sync/', views.SalesSyncView.as_view()), #name='sync'),
+    path('async/', views.SalesAsyncView.as_view()), #name='async'),
+    path('summary/', views.SalesList.as_view()), #name='summary'),
 ]

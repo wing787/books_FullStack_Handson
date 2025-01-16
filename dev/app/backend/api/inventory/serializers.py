@@ -23,3 +23,6 @@ class InventorySerializer(serializers.Serializer):
     quantity = serializers.IntegerField()
     type = serializers.IntegerField()
     date = serializers.DateField()
+
+class FileSerializer(serializers.Serializer):
+    file = serializers.FileField()

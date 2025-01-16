@@ -12,6 +12,9 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from api.inventory.authentication import RefreshJWTAuthentication
+from api.inventory.models import Sales, SalesFile, Status
+from api.inventory.serializers import FileSerializer
+import pandas
 
 class ProductView(APIView):
 
@@ -166,3 +169,29 @@ class LogoutView(APIView):
         response.delete_cookie('access')
         response.delete_cookie('refresh')
         return response
+    
+class SalesAsyncView(APIView):
+    pass
+
+class SalesSyncView(APIView):
+    
+    def post(self, request, format=None):
+        serializer = FileSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        filename = serializer.validated_data['file'].name
+        with open(filename, 'wb') as f:
+            f.write(serializer.validated_data['file'].read())
+
+        sales_file = SalesFile(file_name=filename, status=Status.SYNC)
+        sales_file.save()
+
+        df = pandas.read_csv(filename)
+        for _, row in df.iterrows():
+            sales = Sales(
+                product_id=row['product'], sales_date=row['date'], quantity=row['quantity'], import_file=sales_file)
+            sales.save()
+
+        return Response(status=201)
+
+class SalesList(APIView):
+    pass
